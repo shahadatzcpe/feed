@@ -13,7 +13,7 @@ COPY artisan ./
 
 # Install production dependencies and run Laravel package discovery
 RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist \
-    && php artisan package:discover
+    && local artisan package:discover
 
 # Stage 2: PHP-FPM production image
 FROM php:8.2-fpm-alpine
@@ -23,10 +23,10 @@ RUN apk add --no-cache \
     libpng libjpeg-turbo freetype libxml2 oniguruma \
     zip unzip git curl \
     && apk add --no-cache --virtual .build-deps $PHPIZE_DEPS \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd \
+    && docker-local-ext-configure gd --with-freetype --with-jpeg \
+    && docker-local-ext-install pdo_mysql mbstring exif pcntl bcmath gd \
     && pecl install redis \
-    && docker-php-ext-enable redis \
+    && docker-local-ext-enable redis \
     && apk del .build-deps
 
 # Set working directory
@@ -36,7 +36,7 @@ WORKDIR /var/www/feed
 COPY --from=vendor /app/vendor /var/www/feed/vendor
 
 # Copy application code
-COPY . .
+COPY ../local .
 
 # Ensure storage directory exists with correct permissions
 RUN mkdir -p /var/www/feed/storage/shared \

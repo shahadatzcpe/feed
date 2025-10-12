@@ -69,9 +69,14 @@ phases:
 
         VITE_APP_NAME="${APP_NAME}"
         EOL
+
+      # Copy Dockerfile to root
+      - echo "Copying Dockerfile to root..."
+      - cp docker/local/Dockerfile Dockerfile
+
   post_build:
     commands:
-      - echo ".env file generated successfully."
+      - echo ".env file generated successfully and Dockerfile copied to root."
 
 artifacts:
   files:

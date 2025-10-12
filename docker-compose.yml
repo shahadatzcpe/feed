@@ -1,0 +1,124 @@
+services:
+  # Laravel PHP-FPM (App)
+  app:
+    build:
+      context: .
+      dockerfile: docker/local/Dockerfile
+    container_name: laravel-app
+    volumes:
+      - ./:/var/www
+    networks:
+      - laravel
+
+  # Nginx Web Server
+  nginx:
+    image: nginx:latest
+    container_name: laravel-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./:/var/www
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - app
+    networks:
+      - laravel
+
+  # MySQL Database
+  db:
+    image: mysql:8.0
+    container_name: laravel-db
+    environment:
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_DATABASE: laravel
+      MYSQL_USER: laravel
+      MYSQL_PASSWORD: secret
+    volumes:
+      - dbdata:/var/lib/mysql
+    networks:
+      - laravel
+
+  # Redis
+  redis:
+    image: redis:7
+    container_name: laravel-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - laravel
+
+  # ───────────────────────────────────────────────
+  # Horizon Supervisors
+  # ───────────────────────────────────────────────
+
+  # Frequent Jobs (High Concurrency, Low Memory)
+  horizon_frequent_1:
+    build:
+      context: .
+      dockerfile: docker/local/Dockerfile
+    container_name: horizon-frequent-1
+    command: local /var/www/artisan horizon --environment=production-default
+    mem_limit: 512m
+    volumes:
+      - ./:/var/www
+    depends_on:
+      - redis
+      - app
+    networks:
+      - laravel
+
+  horizon_frequent_2:
+    build:
+      context: .
+      dockerfile: docker/local/Dockerfile
+    container_name: horizon-frequent-2
+    command: local /var/www/artisan horizon --environment=production-default
+    mem_limit: 512m
+    volumes:
+      - ./:/var/www
+    depends_on:
+      - redis
+      - app
+    networks:
+      - laravel
+
+  # Heavy Jobs (High Memory, Medium Duration)
+  horizon_heavy:
+    build:
+      context: .
+      dockerfile: docker/local/Dockerfile
+    container_name: horizon-heavy
+    command: local /var/www/artisan horizon --environment=production-heavy
+    mem_limit: 2g
+    volumes:
+      - ./:/var/www
+    depends_on:
+      - redis
+      - app
+    networks:
+      - laravel
+
+  # Long-Running Jobs (Low Memory, Long Duration)
+  horizon_long_run:
+    build:
+      context: .
+      dockerfile: docker/local/Dockerfile
+    container_name: horizon-long-run
+    command: local /var/www/artisan horizon --environment=production-long_run
+    mem_limit: 512m
+    volumes:
+      - ./:/var/www
+    depends_on:
+      - redis
+      - app
+    networks:
+      - laravel
+
+# ───────────────────────────────────────────────
+# Networks & Volumes
+# ───────────────────────────────────────────────
+networks:
+  laravel:
+
+volumes:
+  dbdata:

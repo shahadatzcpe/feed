@@ -1,0 +1,12 @@
+services:
+  app:
+    environment:
+      APP_ENV: local
+      APP_DEBUG: true
+      DB_HOST: db
+      REDIS_HOST: redis
+
+  # No need to redeclare nginx unless you want to change something
+  # nginx:
+  #   networks:
+  #     - laravel
