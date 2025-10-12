@@ -36,7 +36,7 @@ WORKDIR /var/www/feed
 COPY --from=vendor /app/vendor /var/www/feed/vendor
 
 # Copy application code
-COPY ../local .
+COPY . .
 
 # Ensure storage directory exists with correct permissions
 RUN mkdir -p /var/www/feed/storage/shared \
