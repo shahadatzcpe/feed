@@ -13,7 +13,7 @@ COPY artisan ./
 
 # Install production dependencies and run Laravel package discovery
 RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist \
-    && local artisan package:discover
+    && php artisan package:discover
 
 # Stage 2: PHP-FPM production image
 FROM php:8.2-fpm-alpine
@@ -23,10 +23,10 @@ RUN apk add --no-cache \
     libpng libjpeg-turbo freetype libxml2 oniguruma \
     zip unzip git curl \
     && apk add --no-cache --virtual .build-deps $PHPIZE_DEPS \
-    && docker-local-ext-configure gd --with-freetype --with-jpeg \
-    && docker-local-ext-install pdo_mysql mbstring exif pcntl bcmath gd \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd \
     && pecl install redis \
-    && docker-local-ext-enable redis \
+    && docker-php-ext-enable redis \
     && apk del .build-deps
 
 # Set working directory
