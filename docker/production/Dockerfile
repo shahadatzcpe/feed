@@ -13,6 +13,7 @@ COPY artisan ./
 
 # Install production dependencies and run Laravel package discovery
 RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist \
+    --ignore-platform-req=ext-pcntl \
     && php artisan package:discover
 
 # Stage 2: PHP-FPM production image
@@ -27,7 +28,8 @@ RUN apk add --no-cache \
     && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd \
     && pecl install redis \
     && docker-php-ext-enable redis \
-    && apk del .build-deps
+    && apk del .build-deps \
+
 
 # Set working directory
 WORKDIR /var/www/feed
