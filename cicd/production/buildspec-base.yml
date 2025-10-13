@@ -9,11 +9,11 @@ phases:
   install:
     commands:
       - echo "Logging in to ECR..."
-      - "aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_APP_REPO"
+      - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_APP_REPO
   pre_build:
     commands:
-      - APP_TAG=$(date +%Y%m%d%H%M)
-      - echo "App image tag will be: $APP_TAG"
+      - 'export APP_TAG=$(date +%Y%m%d%H%M)'
+      - 'echo "App image tag will be: $APP_TAG"'
 
   build:
     commands:
