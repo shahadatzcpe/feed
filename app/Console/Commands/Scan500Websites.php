@@ -13,6 +13,7 @@ class Scan500Websites extends Command
      */
     protected $signature = 'app:scan500-websites';
 
+
     /**
      * The console command description.
      *
