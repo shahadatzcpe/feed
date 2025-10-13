@@ -29,7 +29,7 @@ COPY routes/ routes/
 COPY artisan ./
 
 # Install production dependencies
-RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
+RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist --ignore-platform-req=ext-pcntl
 
 # ──────────────────────────────
 # Stage 3: Application code
