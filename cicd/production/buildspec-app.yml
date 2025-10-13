@@ -1,0 +1,34 @@
+version: 0.2
+
+env:
+  variables:
+    AWS_REGION: "eu-west-2"
+    ECR_APP_REPO: "463470945909.dkr.ecr.eu-west-2.amazonaws.com/syncastor/feed/production/app"
+
+phases:
+  install:
+    commands:
+      - echo "Logging in to ECR..."
+      - $(aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_APP_REPO)
+
+  pre_build:
+    commands:
+      - APP_TAG=$(date +%Y%m%d%H%M)
+      - echo "App image tag will be: $APP_TAG"
+
+  build:
+    commands:
+      - echo "Building application image..."
+      - cp ./cicd/production/app.Dockerfile ./Dockerfile
+      - rm -rf vendor
+      - echo "APP_KEY=${APP_KEY}" >> .env
+      - echo "APP_ENV=production" >> .env
+      - docker build -f Dockerfile -t $ECR_APP_REPO:$APP_TAG .
+      - docker tag $ECR_APP_REPO:$APP_TAG $ECR_APP_REPO:latest
+
+  post_build:
+    commands:
+      - echo "Pushing application image..."
+      - docker push $ECR_APP_REPO:$APP_TAG
+      - docker push $ECR_APP_REPO:latest
+      - echo "✅ App image pushed with tags: $APP_TAG and latest"
