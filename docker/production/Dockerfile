@@ -11,6 +11,7 @@ COPY composer.json composer.lock ./
 
 # Copy minimal Laravel files required for package discovery
 COPY bootstrap/ bootstrap/
+COPY routes/ routes/
 COPY artisan ./
 
 # Install production dependencies
