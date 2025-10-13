@@ -9,6 +9,10 @@ WORKDIR /app
 # Copy composer files first for caching
 COPY composer.json composer.lock ./
 
+# Copy minimal Laravel files required for package discovery
+COPY bootstrap/ bootstrap/
+COPY artisan ./
+
 # Install production dependencies
 RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist \
     --ignore-platform-req=ext-pcntl;
