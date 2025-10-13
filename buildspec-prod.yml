@@ -73,6 +73,7 @@ phases:
       # Copy Dockerfile to root
       - echo "Copying Dockerfile to root..."
       - cp docker/production/Dockerfile Dockerfile
+      - cp docker/production/.dockerignore  .dockerignore
 
   post_build:
     commands:

@@ -9,25 +9,17 @@ WORKDIR /app
 # Copy composer files first for caching
 COPY composer.json composer.lock ./
 
-# Copy minimal Laravel code needed for package discovery
-COPY app/ app/
-COPY config/ config/
-COPY routes/ routes/
-COPY bootstrap/ bootstrap/
-COPY artisan ./
-
-# Install production dependencies and run package discovery
+# Install production dependencies
 RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist \
-    --ignore-platform-req=ext-pcntl \
-    && php artisan package:discover
+    --ignore-platform-req=ext-pcntl;
+
 
 # ──────────────────────────────
 # Stage 2: PHP-FPM production image
 # ──────────────────────────────
 FROM php:8.2-fpm-alpine
 
-# Install system dependencies for compiling PHP extensions
-# Install system dependencies and PHP extensions
+# Install system dependencies & PHP extensions
 RUN apk add --no-cache --virtual .build-deps \
         $PHPIZE_DEPS \
         zlib-dev \
@@ -37,12 +29,8 @@ RUN apk add --no-cache --virtual .build-deps \
         freetype-dev \
         libxml2-dev \
         oniguruma-dev \
-        bash \
-        git \
-        curl \
-        zip \
-        unzip \
-    && docker-php-ext-configure gd --with-freetype=/usr/include/ --with-jpeg=/usr/include/ \
+        bash git curl zip unzip \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip \
     && pecl install redis \
     && docker-php-ext-enable redis \
@@ -52,20 +40,21 @@ RUN apk add --no-cache --virtual .build-deps \
 # Set working directory
 WORKDIR /var/www/feed
 
-# Copy vendor from the previous stage
+# Copy vendor from build stage FIRST (leverages cache)
 COPY --from=vendor /app/vendor /var/www/feed/vendor
 
+# Copy application code (vendor is ignored if .dockerignore exists)
+COPY . /var/www/feed
 
-# Ensure storage and bootstrap cache directories exist with proper permissions
+# Ensure correct permissions
 RUN mkdir -p /var/www/feed/storage /var/www/feed/bootstrap/cache \
-    && chown -R www-data:www-data /var/www/feed/storage /var/www/feed/bootstrap/cache \
+    && chown -R www-data:www-data /var/www/feed \
     && chmod -R 775 /var/www/feed/storage /var/www/feed/bootstrap/cache
 
-# Expose PHP-FPM port (for ALB)
+# Expose PHP-FPM port
 EXPOSE 9000
 
-# Run as non-root user for security
+# Run as non-root
 USER www-data
 
-# Default command
 CMD ["php-fpm"]
