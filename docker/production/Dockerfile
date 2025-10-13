@@ -18,7 +18,7 @@ WORKDIR /var/www/feed
 # ──────────────────────────────
 # Stage 2: Vendor dependencies
 # ──────────────────────────────
-FROM base AS vendor
+FROM composer:2 AS vendor
 
 WORKDIR /app
 
