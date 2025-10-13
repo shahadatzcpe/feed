@@ -1,65 +1,55 @@
 # ──────────────────────────────
-# Stage 1: Composer dependencies
+# Stage 1: Base image with system dependencies
 # ──────────────────────────────
-FROM composer:2 AS vendor
-
-# Set working directory
-WORKDIR /app
-
-# Copy composer files first for caching
-COPY composer.json composer.lock ./
-
-# Copy minimal Laravel files required for package discovery
-COPY bootstrap/ bootstrap/
-COPY routes/ routes/
-COPY artisan ./
-
-# Install production dependencies
-RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist \
-    --ignore-platform-req=ext-pcntl;
-
-
-# ──────────────────────────────
-# Stage 2: PHP-FPM production image
-# ──────────────────────────────
-FROM php:8.2-fpm-alpine
+FROM php:8.2-fpm-alpine AS base
 
 # Install system dependencies & PHP extensions
 RUN apk add --no-cache --virtual .build-deps \
-        $PHPIZE_DEPS \
-        zlib-dev \
-        libzip-dev \
-        libpng-dev \
-        libjpeg-turbo-dev \
-        freetype-dev \
-        libxml2-dev \
-        oniguruma-dev \
-        bash git curl zip unzip \
+        $PHPIZE_DEPS zlib-dev libzip-dev libpng-dev libjpeg-turbo-dev freetype-dev libxml2-dev oniguruma-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip \
     && pecl install redis \
     && docker-php-ext-enable redis \
     && apk del .build-deps \
-    && apk add --no-cache zlib libzip libpng libjpeg-turbo freetype libxml2 oniguruma bash curl zip unzip git
+    && apk add --no-cache bash git curl zip unzip zlib libzip libpng libjpeg-turbo freetype libxml2 oniguruma
 
-# Set working directory
 WORKDIR /var/www/feed
 
-# Copy vendor from build stage FIRST (leverages cache)
+# ──────────────────────────────
+# Stage 2: Vendor dependencies
+# ──────────────────────────────
+FROM base AS vendor
+
+WORKDIR /app
+
+# Copy only composer files to leverage cache
+COPY composer.json composer.lock ./
+COPY bootstrap/ bootstrap/
+COPY routes/ routes/
+COPY artisan ./
+
+# Install production dependencies
+RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
+
+# ──────────────────────────────
+# Stage 3: Application code
+# ──────────────────────────────
+FROM base AS final
+
+WORKDIR /var/www/feed
+
+# Copy vendor from previous stage
 COPY --from=vendor /app/vendor /var/www/feed/vendor
 
-# Copy application code (vendor is ignored if .dockerignore exists)
+# Copy full application code
 COPY . /var/www/feed
 
-# Ensure correct permissions
-RUN mkdir -p /var/www/feed/storage /var/www/feed/bootstrap/cache \
-    && chown -R www-data:www-data /var/www/feed \
-    && chmod -R 775 /var/www/feed/storage /var/www/feed/bootstrap/cache
+# Set permissions
+RUN mkdir -p storage bootstrap/cache \
+    && chown -R www-data:www-data . \
+    && chmod -R 775 storage bootstrap/cache
 
-# Expose PHP-FPM port
 EXPOSE 9000
 
-# Run as non-root
 USER www-data
-
 CMD ["php-fpm"]
