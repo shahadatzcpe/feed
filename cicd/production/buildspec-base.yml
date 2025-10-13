@@ -8,8 +8,9 @@ env:
 phases:
   install:
     commands:
-      - echo "Logging in to ECR..."
-      - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_APP_REPO
+      - 'echo "Logging in to ECR..."'
+      - 'aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_APP_REPO'
+
   pre_build:
     commands:
       - 'export APP_TAG=$(date +%Y%m%d%H%M)'
@@ -17,14 +18,14 @@ phases:
 
   build:
     commands:
-      - echo "Building application image..."
-      - cp ./cicd/production/base.Dockerfile ./Dockerfile
-      - docker build -f Dockerfile -t $ECR_APP_REPO:$APP_TAG .
-      - docker tag $ECR_APP_REPO:$APP_TAG $ECR_APP_REPO:latest
+      - 'echo "Building application image..."'
+      - 'cp ./cicd/production/base.Dockerfile ./Dockerfile'
+      - 'docker build -f Dockerfile -t $ECR_APP_REPO:$APP_TAG .'
+      - 'docker tag $ECR_APP_REPO:$APP_TAG $ECR_APP_REPO:latest'
 
   post_build:
     commands:
-      - echo "Pushing application image..."
-      - docker push $ECR_APP_REPO:$APP_TAG
-      - docker push $ECR_APP_REPO:latest
-      - echo "App image pushed with tags: $APP_TAG and latest"
+      - 'echo "Pushing application image..."'
+      - 'docker push $ECR_APP_REPO:$APP_TAG'
+      - 'docker push $ECR_APP_REPO:latest'
+      - 'echo "App image pushed with tags: $APP_TAG and latest"'
