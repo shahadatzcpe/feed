@@ -38,12 +38,13 @@ FROM base AS builder
 # Install tools only used for building
 RUN apk add --no-cache bash git curl zip unzip
 
+
 # Copy Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 # Install dependencies
-COPY composer.json composer.lock ./
-RUN composer install --no-dev --optimize-autoloader --prefer-dist
+COPY . .
+RUN composer install --no-dev --optimize-autoloader --prefer-dist --ignore-platform-reqs
 
 # ──────────────────────────────
 # Stage 3: Final image (Runtime Only + Vendor)
