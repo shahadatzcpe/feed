@@ -1,16 +1,18 @@
-# Use base image with PHP + dependencies already installed
-FROM 463470945909.dkr.ecr.eu-west-2.amazonaws.com/syncastor/feed/production/base:latest
+FROM 463470945909.dkr.ecr.eu-west-2.amazonaws.com/syncastor/feed/production:latest-base
 
-WORKDIR /var/www
+WORKDIR /var/www/feed
 
-# Copy Laravel app code only
+# Copy composer binary from official composer:2 image
+COPY --from=463470945909.dkr.ecr.eu-west-2.amazonaws.com/syncastor/feed/production:vendor-base /var/www/feed/vendor /var/www/feed/vendor
+
+# Copy entire source code
 COPY . .
 
-# Set permissions for Laravel
-RUN chown -R www-data:www-data storage bootstrap/cache
+# Set ownership to www-data (PHP-FPM user) and permissions
+RUN chown -R www-data:www-data /var/www/feed/storage /var/www/feed/bootstrap/cache \
+    && chmod -R 775 /var/www/feed/storage /var/www/feed/bootstrap/cache
 
-# Expose PHP-FPM port (optional)
-EXPOSE 9000
+WORKDIR /var/www/feed
 
-# CMD is optional; deployment can define it
-# CMD ["php-fpm"]
+
+CMD ["php-fpm"]
