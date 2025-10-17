@@ -28,32 +28,5 @@ RUN apk add --no-cache --virtual .build-deps \
 
 # No Composer copied here
 
-WORKDIR /app
+WORKDIR /var/www/feed
 
-# ──────────────────────────────
-# Stage 2: Builder (Composer + Build Tools Only Here)
-# ──────────────────────────────
-FROM base AS builder
-
-# Install tools only used for building
-RUN apk add --no-cache bash git curl zip unzip
-
-
-# Copy Composer
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
-
-# Install dependencies
-COPY . .
-RUN composer install --no-dev --optimize-autoloader --prefer-dist --ignore-platform-reqs
-
-# ──────────────────────────────
-# Stage 3: Final image (Runtime Only + Vendor)
-# ──────────────────────────────
-FROM base AS vendor-base
-
-WORKDIR /app
-
-# Copy vendor only from builder
-COPY --from=builder /app/vendor ./vendor
-
-CMD ["php-fpm"]

@@ -4,6 +4,8 @@ env:
   variables:
     AWS_REGION: "eu-west-2"
     ECR_APP_REPO: "463470945909.dkr.ecr.eu-west-2.amazonaws.com/syncastor/feed/production/app"
+    S3_ENV_PATH: "s3://my-bucket/path/.env"  # adjust as needed
+
 phases:
   install:
     commands:
@@ -16,19 +18,41 @@ phases:
 
   pre_build:
     commands:
-      - 'export APP_TAG=$(date +%Y%m%d%H%M)'
-      - 'echo "App image tag will be: $APP_TAG"'
+      - 'export BUILD_TAG=$(date +%Y-%m-%d-%H-%M-%s)-${CODEBUILD_RESOLVED_SOURCE_VERSION:0:7}'
+      - 'echo "App image tag will be: $BUILD_TAG"'
+      - 'echo "Downloading .env from S3..."'
+      #- 'aws s3 cp $S3_ENV_PATH ./.env'
+      - 'cp .env.example .env'
+      # Add Git commit ID and build timestamp to .env
+      - 'echo "COMMIT_ID=${CODEBUILD_RESOLVED_SOURCE_VERSION}" >> .env'
+      - 'echo "BUILD_TIME=$(date +%Y-%m-%d-%H-%M-%s)" >> .env'
 
   build:
     commands:
-      - 'echo "Building application image..."'
+      - 'echo "Building base image..."'
       - 'cp ./cicd/production/base.Dockerfile ./Dockerfile'
-      - 'docker build -f Dockerfile -t $ECR_APP_REPO:$APP_TAG .'
-      - 'docker tag $ECR_APP_REPO:$APP_TAG $ECR_APP_REPO:latest'
+      - 'docker build -f Dockerfile -t $ECR_APP_REPO:base-$BUILD_TAG .'
+      - 'docker tag $ECR_APP_REPO:base-$BUILD_TAG $ECR_APP_REPO:latest-base'
+      - 'rm Dockerfile'
+      - 'echo "Base image build complete..."'
+
+      - 'echo "Building vendor image..."'
+      - 'cp ./cicd/production/vendor.Dockerfile ./Dockerfile'
+      - 'docker build -f Dockerfile -t $ECR_APP_REPO:vendor-$BUILD_TAG .'
+      - 'docker tag $ECR_APP_REPO:vendor-$BUILD_TAG $ECR_APP_REPO:latest-vendor'
+      - 'rm Dockerfile'
+      - 'echo "Vendor image build complete..."'
 
   post_build:
     commands:
-      - 'echo "Pushing application image..."'
-      - 'docker push $ECR_APP_REPO:$APP_TAG'
-      - 'docker push $ECR_APP_REPO:latest'
-      - 'echo "App image pushed with tags: $APP_TAG and latest"'
+      - 'echo "Pushing application images..."'
+      - 'docker push $ECR_APP_REPO:base-$BUILD_TAG'
+      - 'docker push $ECR_APP_REPO:latest-base'
+      - 'docker push $ECR_APP_REPO:vendor-$BUILD_TAG'
+      - 'docker push $ECR_APP_REPO:latest-vendor'
+      - 'echo "All images pushed successfully!"'
+
+artifacts:
+  files:
+    - '**/*'          # include everything
+  discard-paths: no   # preserve directory structure

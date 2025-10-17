@@ -23,12 +23,12 @@ phases:
       - rm -rf vendor
       - echo "APP_KEY=${APP_KEY}" >> .env
       - echo "APP_ENV=production" >> .env
-      - docker build -f Dockerfile -t $ECR_APP_REPO:$APP_TAG .
-      - docker tag $ECR_APP_REPO:$APP_TAG $ECR_APP_REPO:latest
+      - docker build -f Dockerfile -t $ECR_BASE_REPO:$APP_TAG .
+      - docker tag $ECR_BASE_REPO:$APP_TAG $ECR_BASE_REPO:latest
 
   post_build:
     commands:
       - echo "Pushing application image..."
-      - docker push $ECR_APP_REPO:$APP_TAG
-      - docker push $ECR_APP_REPO:latest
+      - docker push $ECR_BASE_REPO:$APP_TAG
+      - docker push $ECR_BASE_REPO:latest
       - echo "✅ App image pushed with tags: $APP_TAG and latest"
