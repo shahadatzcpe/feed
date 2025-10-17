@@ -9,7 +9,12 @@ COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
 COPY . .
 
 # Install PHP dependencies
-RUN composer install --no-dev --optimize-autoloader --no-interaction --no-platform-reqs
+RUN export COMPOSER_MEMORY_LIMIT=-1 \
+    && composer install \
+        --no-dev \
+        --optimize-autoloader \
+        --no-interaction \
+        --no-platform-reqs
 
 # Delete everything except vendor folder
 RUN find . -mindepth 1 -maxdepth 1 ! -name 'vendor' -exec rm -rf {} +
