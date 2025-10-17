@@ -14,7 +14,7 @@ RUN export COMPOSER_MEMORY_LIMIT=-1 \
         --no-dev \
         --optimize-autoloader \
         --no-interaction \
-        --no-platform-reqs
+        --ignore-platform-reqs
 
 # Delete everything except vendor folder
 RUN find . -mindepth 1 -maxdepth 1 ! -name 'vendor' -exec rm -rf {} +
