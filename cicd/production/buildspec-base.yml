@@ -18,16 +18,14 @@ phases:
 
   pre_build:
     commands:
-pre_build:
-  commands:
-    - 'SHORT_COMMIT=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c1-7)'
-    - 'export BUILD_TAG=$(date +%Y-%m-%d-%H-%M-%s)-$SHORT_COMMIT'
-    - 'echo "App image tag will be: $BUILD_TAG"'
-    - 'echo "Preparing .env file..."'
-    - 'cp .env.example .env'
-    - 'echo "COMMIT_ID=$CODEBUILD_RESOLVED_SOURCE_VERSION" >> .env'
-    - 'echo "BUILD_TIME=$(date +%Y-%m-%d-%H-%M-%s)" >> .env'
-    - 'cat .env'
+      - 'SHORT_COMMIT=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c1-7)'
+      - 'export BUILD_TAG=$(date +%Y-%m-%d-%H-%M-%s)-$SHORT_COMMIT'
+      - 'echo "App image tag will be: $BUILD_TAG"'
+      - 'echo "Preparing .env file..."'
+      - 'cp .env.example .env'
+      - 'echo "COMMIT_ID=$CODEBUILD_RESOLVED_SOURCE_VERSION" >> .env'
+      - 'echo "BUILD_TIME=$(date +%Y-%m-%d-%H-%M-%s)" >> .env'
+      - 'cat .env'
 
   build:
     commands:
