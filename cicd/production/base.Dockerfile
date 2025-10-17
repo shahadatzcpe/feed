@@ -1,9 +1,8 @@
 # ──────────────────────────────
-# Stage 1: Base image with system dependencies
+# Stage 1: Base image with system dependencies (Runtime Only)
 # ──────────────────────────────
 FROM php:8.2-fpm-alpine AS base
 
-# Install build and runtime dependencies
 RUN apk add --no-cache --virtual .build-deps \
         $PHPIZE_DEPS \
         zlib-dev \
@@ -19,11 +18,6 @@ RUN apk add --no-cache --virtual .build-deps \
     && docker-php-ext-enable redis \
     && apk del .build-deps \
     && apk add --no-cache \
-        bash \
-        git \
-        curl \
-        zip \
-        unzip \
         zlib \
         libzip \
         libpng \
@@ -32,37 +26,33 @@ RUN apk add --no-cache --virtual .build-deps \
         libxml2 \
         oniguruma
 
-# Copy Composer from official image
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+# No Composer copied here
 
 WORKDIR /app
 
 # ──────────────────────────────
-# Stage 2: Builder (install dependencies)
+# Stage 2: Builder (Composer + Build Tools Only Here)
 # ──────────────────────────────
 FROM base AS builder
 
-# Copy files required for Composer install
+# Install tools only used for building
+RUN apk add --no-cache bash git curl zip unzip
+
+# Copy Composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+# Install dependencies
 COPY composer.json composer.lock ./
-COPY bootstrap/ bootstrap/
-COPY routes/ routes/
-COPY artisan ./
-
-# Install PHP dependencies
-RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist --ignore-platform-req=ext-pcntl
-
-# Optional: remove source files to clean up image
-RUN rm -rf bootstrap routes artisan composer.json composer.lock
+RUN composer install --no-dev --optimize-autoloader --prefer-dist
 
 # ──────────────────────────────
-# Stage 3: Final image (reuse builder)
+# Stage 3: Final image (Runtime Only + Vendor)
 # ──────────────────────────────
-FROM builder AS final
+FROM base AS vendor-base
 
-WORKDIR /var/www/feed
+WORKDIR /app
 
-# Copy only vendor folder from builder
-COPY --from=builder /app/vendor /var/www/feed/vendor
+# Copy vendor only from builder
+COPY --from=builder /app/vendor ./vendor
 
-EXPOSE 9000
 CMD ["php-fpm"]

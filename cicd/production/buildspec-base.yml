@@ -4,7 +4,6 @@ env:
   variables:
     AWS_REGION: "eu-west-2"
     ECR_APP_REPO: "463470945909.dkr.ecr.eu-west-2.amazonaws.com/syncastor/feed/production/app"
-
 phases:
   install:
     commands:
