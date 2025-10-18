@@ -24,21 +24,34 @@ phases:
 
   build:
     commands:
-      - 'echo "Building base image..."'
+#      - 'echo "Building base image..."'
 #      - 'docker build -f ./cicd/production/base.Dockerfile -t $ECR_APP_REPO:base-$BUILD_TAG .'
 #      - 'docker tag $ECR_APP_REPO:base-$BUILD_TAG $ECR_APP_REPO:latest-base'
 #      - 'echo "Base image build complete. Now pushing base image..."'
 #      - 'docker push $ECR_APP_REPO:base-$BUILD_TAG'
 #      - 'docker push $ECR_APP_REPO:latest-base'
 #      - 'echo "Base image pushed successfully!"'
+#
 #      - 'echo "Building vendor image..."'
-      -
 #      - 'docker build -f ./cicd/production/vendor.Dockerfile -t $ECR_APP_REPO:vendor-$BUILD_TAG .'
 #      - 'docker tag $ECR_APP_REPO:vendor-$BUILD_TAG $ECR_APP_REPO:latest-vendor'
 #      - 'echo "Vendor image build complete. Now pushing vendor image..."'
 #      - 'docker push $ECR_APP_REPO:vendor-$BUILD_TAG'
 #      - 'docker push $ECR_APP_REPO:latest-vendor'
 #      - 'echo "Vendor image pushed successfully!"'
+      -
+      - 'echo "Building nginx image..."'
+      - 'TIMESTAMP=$(date +%Y%m%d%H%M%S)'
+      - 'if [ -f ./cicd/production/nginx.conf ]; then cp ./cicd/production/nginx.conf nginx.conf; fi'
+      - 'if [ -f nginx.conf ]; then cp nginx.conf nginx.conf.bak_$TIMESTAMP; fi'
+      - 'docker build -f ./cicd/production/nginx.Dockerfile -t $ECR_APP_REPO:nginx-$BUILD_TAG .'
+      - 'docker tag $ECR_APP_REPO:nginx-$BUILD_TAG $ECR_APP_REPO:latest-nginx'
+      - 'echo "Nginx image build complete. Now pushing nginx image..."'
+      - 'docker push $ECR_APP_REPO:nginx-$BUILD_TAG'
+      - 'docker push $ECR_APP_REPO:latest-nginx'
+      - 'if [ -f nginx.conf ]; then rm nginx.conf; fi'
+      - 'if [ -f nginx.conf.bak_$TIMESTAMP ]; then cp nginx.conf.bak_$TIMESTAMP nginx.conf; fi'
+      - 'echo "Nginx image pushed successfully!"'
       -
       - 'echo "Preparing .env file..."'
       - 'cp .env.example .env'
