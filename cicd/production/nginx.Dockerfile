@@ -6,5 +6,6 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 WORKDIR /var/www/feed/
 
+COPY . .
 # Expose port 80 (standard HTTP port)
 EXPOSE 80
