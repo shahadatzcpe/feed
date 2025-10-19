@@ -25,6 +25,7 @@ phases:
   build:
     commands:
 #      - 'echo "Building base image..."'
+#      - 'Any change in base.docker'
 #      - 'docker build -f ./cicd/production/base.Dockerfile -t $ECR_APP_REPO:base-$BUILD_TAG .'
 #      - 'docker tag $ECR_APP_REPO:base-$BUILD_TAG $ECR_APP_REPO:latest-base'
 #      - 'echo "Base image build complete. Now pushing base image..."'

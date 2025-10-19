@@ -3,7 +3,7 @@ version: 0.2
 env:
   variables:
     AWS_REGION: "eu-west-2"
-    ECR_APP_REPO: "463470945909.dkr.ecr.eu-west-2.amazonaws.com/syncastor/feed/production/app"
+    ECR_APP_REPO: "463470945909.dkr.ecr.eu-west-2.amazonaws.com/syncastor/feed/production"
 
 phases:
   install:
@@ -20,7 +20,6 @@ phases:
     commands:
       - echo "Building application image..."
       - cp ./cicd/production/app.Dockerfile ./Dockerfile
-      - rm -rf vendor
       - echo "APP_KEY=${APP_KEY}" >> .env
       - echo "APP_ENV=production" >> .env
       - docker build -f Dockerfile -t $ECR_BASE_REPO:$APP_TAG .

@@ -15,4 +15,5 @@ RUN chown -R www-data:www-data /var/www/feed/storage /var/www/feed/bootstrap/cac
 WORKDIR /var/www/feed
 
 
+EXPOSE 9000
 CMD ["php-fpm"]
