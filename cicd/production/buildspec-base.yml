@@ -4,7 +4,6 @@ env:
   variables:
     AWS_REGION: 'eu-west-2'
     ECR_REPO: '463470945909.dkr.ecr.eu-west-2.amazonaws.com/syncastor/feed/production'
-    S3_ENV_PATH: 's3://my-bucket/path/.env'
     PARAM_BASE_HASH: '/feed/production/base.Dockerfile.hash'
     PARAM_VENDOR_HASH: '/feed/production/composer.json.hash'
     PARAM_NGINX_HASH: '/feed/production/nginx.hash'
@@ -84,7 +83,7 @@ phases:
       - 'echo "Building nginx image if needed..."'
       - 'sh -c "if [ \"$NGINX_NEEDS_REBUILD\" -eq 1 ]; then
             echo \"🔄 nginx.conf changed or base updated — rebuilding nginx image...\";
-            cp ./cicd/production/nginx.Dockerfile ./nginx.conf
+            cp ./cicd/production/nginx.conf ./nginx.conf
             docker build -f ./cicd/production/nginx.Dockerfile -t $ECR_REPO:nginx-$BUILD_TAG .;
             rm nginx.conf
             docker tag $ECR_REPO:nginx-$BUILD_TAG $ECR_REPO:latest-nginx;
