@@ -106,7 +106,7 @@ phases:
       - 'echo "✅ App image pushed with tags: $BUILD_TAG and app-latest"'
 
       - 'echo "Generating imagedefinitions.json for ECS deployment..."'
-      - 'echo "[ \
+      - 'echo "[
           {\"name\":\"web\",\"imageUri\":\"$ECR_REPO:app-latest\"},
           {\"name\":\"horizon-default\",\"imageUri\":\"$ECR_REPO:app-latest\"},
           {\"name\":\"horizon-long-job\",\"imageUri\":\"$ECR_REPO:app-latest\"},
