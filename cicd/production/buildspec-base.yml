@@ -107,10 +107,10 @@ phases:
 
       - 'echo "Generating imagedefinitions.json for ECS deployment..."'
       - 'echo "[ \
-          {\"name\":\"web\",\"imageUri\":\"$ECR_REPO:app-$BUILD_TAG\"}, \
-          {\"name\":\"horizon-default\",\"imageUri\":\"$ECR_REPO:app-$BUILD_TAG\"}, \
-          {\"name\":\"horizon-long-job\",\"imageUri\":\"$ECR_REPO:app-$BUILD_TAG\"}, \
-          {\"name\":\"horizon-single-task\",\"imageUri\":\"$ECR_REPO:app-$BUILD_TAG\"} \
+          {\"name\":\"web\",\"imageUri\":\"$ECR_REPO:app-latest\"}, \
+          {\"name\":\"horizon-default\",\"imageUri\":\"$ECR_REPO:app-latest\"}, \
+          {\"name\":\"horizon-long-job\",\"imageUri\":\"$ECR_REPO:app-latest\"}, \
+          {\"name\":\"horizon-single-task\",\"imageUri\":\"$ECR_REPO:app-latest\"} \
         ]" > imagedefinitions.json'
 
 artifacts:
