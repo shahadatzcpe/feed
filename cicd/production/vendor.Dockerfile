@@ -1,4 +1,4 @@
-FROM 463470945909.dkr.ecr.eu-west-2.amazonaws.com/syncastor/feed/production:latest-base
+FROM 463470945909.dkr.ecr.eu-west-2.amazonaws.com/syncastor/feed/production:base-latest
 
 WORKDIR /var/www/feed
 
