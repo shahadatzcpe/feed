@@ -84,7 +84,9 @@ phases:
       - 'echo "Building nginx image if needed..."'
       - 'sh -c "if [ \"$NGINX_NEEDS_REBUILD\" -eq 1 ]; then
             echo \"🔄 nginx.conf changed or base updated — rebuilding nginx image...\";
+            cp ./cicd/production/nginx.Dockerfile nginx.conf
             docker build -f ./cicd/production/nginx.Dockerfile -t $ECR_REPO:nginx-$BUILD_TAG .;
+            rm nginx.conf
             docker tag $ECR_REPO:nginx-$BUILD_TAG $ECR_REPO:latest-nginx;
             docker push $ECR_REPO:nginx-$BUILD_TAG;
             docker push $ECR_REPO:latest-nginx;
