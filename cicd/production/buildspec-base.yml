@@ -3,8 +3,11 @@ version: 0.2
 env:
   variables:
     AWS_REGION: 'eu-west-2'
-    ECR_APP_REPO: '463470945909.dkr.ecr.eu-west-2.amazonaws.com/syncastor/feed/production'
+    ECR_REPO: '463470945909.dkr.ecr.eu-west-2.amazonaws.com/syncastor/feed/production'
     S3_ENV_PATH: 's3://my-bucket/path/.env'
+    PARAM_BASE_HASH: '/feed/production/base.Dockerfile.hash'
+    PARAM_VENDOR_HASH: '/feed/production/composer.json.hash'
+    PARAM_NGINX_HASH: '/feed/production/nginx.hash'
 
 phases:
   install:
@@ -12,54 +15,80 @@ phases:
       - 'echo "AWS CLI version:"'
       - 'aws --version'
       - 'echo "AWS region: $AWS_REGION"'
-      - 'echo "ECR repo: $ECR_APP_REPO"'
+      - 'echo "ECR repo: $ECR_REPO"'
       - 'aws sts get-caller-identity'
-      - 'aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_APP_REPO'
+      - 'aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO'
 
   pre_build:
     commands:
+      - 'echo "Preparing build metadata..."'
       - 'SHORT_COMMIT=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c1-7)'
       - 'export BUILD_TAG=$(date +%Y-%m-%d-%H-%M)-$SHORT_COMMIT'
       - 'echo "App image tag will be: $BUILD_TAG"'
+      -
+      - 'echo "Fetching previous hashes from Parameter Store..."'
+      - 'export BASE_HASH_OLD=$(aws ssm get-parameter --name "$PARAM_BASE_HASH" --query "Parameter.Value" --output text 2>/dev/null || echo "")'
+      - 'export VENDOR_HASH_OLD=$(aws ssm get-parameter --name "$PARAM_VENDOR_HASH" --query "Parameter.Value" --output text 2>/dev/null || echo "")'
+      - 'export NGINX_HASH_OLD=$(aws ssm get-parameter --name "$PARAM_NGINX_HASH" --query "Parameter.Value" --output text 2>/dev/null || echo "")'
+      -
+      - 'echo "Computing current file hashes..."'
+      - 'export BASE_HASH_NEW=$(sha256sum ./cicd/production/base.Dockerfile | awk "{print \$1}")'
+      - 'export VENDOR_HASH_NEW=$(sha256sum composer.json | awk "{print \$1}")'
+      - 'export NGINX_HASH_NEW=$(sha256sum ./cicd/production/nginx.conf | awk "{print \$1}")'
+      -
+      - 'echo "Base old:   $BASE_HASH_OLD"'
+      - 'echo "Base new:   $BASE_HASH_NEW"'
+      - 'echo "Vendor old: $VENDOR_HASH_OLD"'
+      - 'echo "Vendor new: $VENDOR_HASH_NEW"'
+      - 'echo "Nginx old:  $NGINX_HASH_OLD"'
+      - 'echo "Nginx new:  $NGINX_HASH_NEW"'
 
   build:
     commands:
-#      - 'echo "Building base image..."'
-#      - 'Any change in base.docker'
-#      - 'docker build -f ./cicd/production/base.Dockerfile -t $ECR_APP_REPO:base-$BUILD_TAG .'
-#      - 'docker tag $ECR_APP_REPO:base-$BUILD_TAG $ECR_APP_REPO:latest-base'
-#      - 'echo "Base image build complete. Now pushing base image..."'
-#      - 'docker push $ECR_APP_REPO:base-$BUILD_TAG'
-#      - 'docker push $ECR_APP_REPO:latest-base'
-#      - 'echo "Base image pushed successfully!"'
-#
-#      - 'echo "Building vendor image..."'
-#      - 'docker build -f ./cicd/production/vendor.Dockerfile -t $ECR_APP_REPO:vendor-$BUILD_TAG .'
-#      - 'docker tag $ECR_APP_REPO:vendor-$BUILD_TAG $ECR_APP_REPO:latest-vendor'
-#      - 'echo "Vendor image build complete. Now pushing vendor image..."'
-#      - 'docker push $ECR_APP_REPO:vendor-$BUILD_TAG'
-#      - 'docker push $ECR_APP_REPO:latest-vendor'
-#      - 'echo "Vendor image pushed successfully!"'
+      - 'echo "Checking base.Dockerfile for changes..."'
+      - |
+        if [ "$BASE_HASH_NEW" != "$BASE_HASH_OLD" ] || [ -z "$BASE_HASH_OLD" ]; then
+          echo "🔄 base.Dockerfile changed — rebuilding base image..."
+          docker build -f ./cicd/production/base.Dockerfile -t $ECR_REPO:base-$BUILD_TAG .
+          docker tag $ECR_REPO:base-$BUILD_TAG $ECR_REPO:latest-base
+          docker push $ECR_REPO:base-$BUILD_TAG
+          docker push $ECR_REPO:latest-base
+          aws ssm put-parameter --name "$PARAM_BASE_HASH" --value "$BASE_HASH_NEW" --type String --overwrite
+        else
+          echo "✅ No changes in base.Dockerfile, skipping base image build."
+        fi
       -
-      - 'echo "Building nginx image..."'
-      - 'TIMESTAMP=$(date +%Y%m%d%H%M%S)'
-      - 'if [ -f ./cicd/production/nginx.conf ]; then cp ./cicd/production/nginx.conf nginx.conf; fi'
-      - 'if [ -f nginx.conf ]; then cp nginx.conf nginx.conf.bak_$TIMESTAMP; fi'
-      - 'docker build -f ./cicd/production/nginx.Dockerfile -t $ECR_APP_REPO:nginx-$BUILD_TAG .'
-      - 'docker tag $ECR_APP_REPO:nginx-$BUILD_TAG $ECR_APP_REPO:latest-nginx'
-      - 'echo "Nginx image build complete. Now pushing nginx image..."'
-      - 'docker push $ECR_APP_REPO:nginx-$BUILD_TAG'
-      - 'docker push $ECR_APP_REPO:latest-nginx'
-      - 'if [ -f nginx.conf ]; then rm nginx.conf; fi'
-      - 'if [ -f nginx.conf.bak_$TIMESTAMP ]; then cp nginx.conf.bak_$TIMESTAMP nginx.conf; fi'
-      - 'echo "Nginx image pushed successfully!"'
+      - 'echo "Checking composer.json for changes..."'
+      - |
+        if [ "$VENDOR_HASH_NEW" != "$VENDOR_HASH_OLD" ] || [ -z "$VENDOR_HASH_OLD" ]; then
+          echo "🔄 composer.json changed — rebuilding vendor image..."
+          docker build -f ./cicd/production/vendor.Dockerfile -t $ECR_REPO:vendor-$BUILD_TAG .
+          docker tag $ECR_REPO:vendor-$BUILD_TAG $ECR_REPO:latest-vendor
+          docker push $ECR_REPO:vendor-$BUILD_TAG
+          docker push $ECR_REPO:latest-vendor
+          aws ssm put-parameter --name "$PARAM_VENDOR_HASH" --value "$VENDOR_HASH_NEW" --type String --overwrite
+        else
+          echo "✅ No changes in composer.json, skipping vendor image build."
+        fi
+      -
+      - 'echo "Checking nginx.conf for changes..."'
+      - |
+        if [ "$NGINX_HASH_NEW" != "$NGINX_HASH_OLD" ] || [ -z "$NGINX_HASH_OLD" ]; then
+          echo "🔄 nginx.conf changed — rebuilding nginx image..."
+          docker build -f ./cicd/production/nginx.Dockerfile -t $ECR_REPO:nginx-$BUILD_TAG .
+          docker tag $ECR_REPO:nginx-$BUILD_TAG $ECR_REPO:latest-nginx
+          docker push $ECR_REPO:nginx-$BUILD_TAG
+          docker push $ECR_REPO:latest-nginx
+          aws ssm put-parameter --name "$PARAM_NGINX_HASH" --value "$NGINX_HASH_NEW" --type String --overwrite
+        else
+          echo "✅ No changes in nginx.conf, skipping nginx image build."
+        fi
       -
       - 'echo "Preparing .env file..."'
       - 'cp .env.example .env'
       - 'echo "COMMIT_ID=$CODEBUILD_RESOLVED_SOURCE_VERSION" >> .env'
       - 'echo "BUILD_TIME=$(date +%Y-%m-%d-%H-%M-%s)" >> .env'
       - 'cat .env'
-      -
       - 'cp ./cicd/production/app.Dockerfile Dockerfile'
 
 artifacts:
