@@ -58,43 +58,40 @@ phases:
   build:
     commands:
       - 'echo "Building base image if needed..."'
-      - |
-        'if [ "$BASE_NEEDS_REBUILD" -eq 1 ]; then
-            echo "🔄 base.Dockerfile changed — rebuilding base image..."
-            docker build -f ./cicd/production/base.Dockerfile -t $ECR_REPO:base-$BUILD_TAG .
-            docker tag $ECR_REPO:base-$BUILD_TAG $ECR_REPO:latest-base
-            docker push $ECR_REPO:base-$BUILD_TAG
-            docker push $ECR_REPO:latest-base
-            aws ssm put-parameter --name "$PARAM_BASE_HASH" --value "$BASE_HASH_NEW" --type String --overwrite
+      - 'sh -c "if [ \"$BASE_NEEDS_REBUILD\" -eq 1 ]; then
+            echo \"🔄 base.Dockerfile changed — rebuilding base image...\";
+            docker build -f ./cicd/production/base.Dockerfile -t $ECR_REPO:base-$BUILD_TAG .;
+            docker tag $ECR_REPO:base-$BUILD_TAG $ECR_REPO:latest-base;
+            docker push $ECR_REPO:base-$BUILD_TAG;
+            docker push $ECR_REPO:latest-base;
+            aws ssm put-parameter --name \"$PARAM_BASE_HASH\" --value \"$BASE_HASH_NEW\" --type String --overwrite;
          else
-            echo "✅ No changes in base.Dockerfile, skipping base image build."
-         fi'
+            echo \"✅ No changes in base.Dockerfile, skipping base image build.\";
+         fi"'
 
       - 'echo "Building vendor image if needed..."'
-      - |
-        'if [ "$VENDOR_NEEDS_REBUILD" -eq 1 ]; then
-            echo "🔄 composer.json changed or base updated — rebuilding vendor image..."
-            docker build -f ./cicd/production/vendor.Dockerfile -t $ECR_REPO:vendor-$BUILD_TAG .
-            docker tag $ECR_REPO:vendor-$BUILD_TAG $ECR_REPO:latest-vendor
-            docker push $ECR_REPO:vendor-$BUILD_TAG
-            docker push $ECR_REPO:latest-vendor
-            aws ssm put-parameter --name "$PARAM_VENDOR_HASH" --value "$VENDOR_HASH_NEW" --type String --overwrite
+      - 'sh -c "if [ \"$VENDOR_NEEDS_REBUILD\" -eq 1 ]; then
+            echo \"🔄 composer.json changed or base updated — rebuilding vendor image...\";
+            docker build -f ./cicd/production/vendor.Dockerfile -t $ECR_REPO:vendor-$BUILD_TAG .;
+            docker tag $ECR_REPO:vendor-$BUILD_TAG $ECR_REPO:latest-vendor;
+            docker push $ECR_REPO:vendor-$BUILD_TAG;
+            docker push $ECR_REPO:latest-vendor;
+            aws ssm put-parameter --name \"$PARAM_VENDOR_HASH\" --value \"$VENDOR_HASH_NEW\" --type String --overwrite;
          else
-            echo "✅ No changes in composer.json, skipping vendor image build."
-         fi'
+            echo \"✅ No changes in composer.json, skipping vendor image build.\";
+         fi"'
 
       - 'echo "Building nginx image if needed..."'
-      - |
-        'if [ "$NGINX_NEEDS_REBUILD" -eq 1 ]; then
-            echo "🔄 nginx.conf changed or base updated — rebuilding nginx image..."
-            docker build -f ./cicd/production/nginx.Dockerfile -t $ECR_REPO:nginx-$BUILD_TAG .
-            docker tag $ECR_REPO:nginx-$BUILD_TAG $ECR_REPO:latest-nginx
-            docker push $ECR_REPO:nginx-$BUILD_TAG
-            docker push $ECR_REPO:latest-nginx
-            aws ssm put-parameter --name "$PARAM_NGINX_HASH" --value "$NGINX_HASH_NEW" --type String --overwrite
+      - 'sh -c "if [ \"$NGINX_NEEDS_REBUILD\" -eq 1 ]; then
+            echo \"🔄 nginx.conf changed or base updated — rebuilding nginx image...\";
+            docker build -f ./cicd/production/nginx.Dockerfile -t $ECR_REPO:nginx-$BUILD_TAG .;
+            docker tag $ECR_REPO:nginx-$BUILD_TAG $ECR_REPO:latest-nginx;
+            docker push $ECR_REPO:nginx-$BUILD_TAG;
+            docker push $ECR_REPO:latest-nginx;
+            aws ssm put-parameter --name \"$PARAM_NGINX_HASH\" --value \"$NGINX_HASH_NEW\" --type String --overwrite;
          else
-            echo "✅ No changes in nginx.conf, skipping nginx image build."
-         fi'
+            echo \"✅ No changes in nginx.conf, skipping nginx image build.\";
+         fi"'
 
       - 'echo "Preparing .env file..."'
       - 'cp .env.example .env'
@@ -107,7 +104,7 @@ phases:
       - 'docker push $ECR_REPO:app-$BUILD_TAG'
       - 'docker push $ECR_REPO:latest'
       - 'echo "✅ App image pushed with tags: $BUILD_TAG and latest"'
-      -
+
       - 'echo "Generating imagedefinitions.json for ECS deployment..."'
       - 'echo "[ \
           {\"name\":\"web\",\"imageUri\":\"$ECR_REPO:$BUILD_TAG\"}, \
@@ -115,7 +112,6 @@ phases:
           {\"name\":\"horizon-long-job\",\"imageUri\":\"$ECR_REPO:$BUILD_TAG\"}, \
           {\"name\":\"horizon-single-task\",\"imageUri\":\"$ECR_REPO:$BUILD_TAG\"} \
         ]" > imagedefinitions.json'
-
 
 artifacts:
   files:
