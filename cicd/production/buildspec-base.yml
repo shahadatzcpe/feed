@@ -73,7 +73,7 @@ phases:
       - 'sh -c "if [ \"$VENDOR_NEEDS_REBUILD\" -eq 1 ]; then
             echo \"🔄 composer.json changed or base updated — rebuilding vendor image...\";
             docker build -f ./cicd/production/vendor.Dockerfile -t $ECR_REPO:vendor-$BUILD_TAG .;
-            docker tag $ECR_REPO:vendor-$BUILD_TAG $ECR_REPO:latest-vendor;
+            docker tag $ECR_REPO:vendor-$BUILD_TAG $ECR_REPO:vendor-latest;
             docker push $ECR_REPO:vendor-$BUILD_TAG;
             docker push $ECR_REPO:vendor-latest;
             aws ssm put-parameter --name \"$PARAM_VENDOR_HASH\" --value \"$VENDOR_HASH_NEW\" --type String --overwrite;
