@@ -103,7 +103,7 @@ phases:
       - 'docker tag $ECR_REPO:app-$BUILD_TAG $ECR_REPO:app-latest'
       - 'docker push $ECR_REPO:app-$BUILD_TAG'
       - 'docker push $ECR_REPO:app-latest'
-      - 'echo "✅ App image pushed with tags: $BUILD_TAG and latest"'
+      - 'echo "✅ App image pushed with tags: $BUILD_TAG and app-latest"'
 
       - 'echo "Generating imagedefinitions.json for ECS deployment..."'
       - 'echo "[ \
