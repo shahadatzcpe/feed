@@ -25,73 +25,99 @@ phases:
       - 'SHORT_COMMIT=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c1-7)'
       - 'export BUILD_TAG=$(date +%Y-%m-%d-%H-%M)-$SHORT_COMMIT'
       - 'echo "App image tag will be: $BUILD_TAG"'
-      -
+
       - 'echo "Fetching previous hashes from Parameter Store..."'
       - 'export BASE_HASH_OLD=$(aws ssm get-parameter --name "$PARAM_BASE_HASH" --query "Parameter.Value" --output text 2>/dev/null || echo "")'
       - 'export VENDOR_HASH_OLD=$(aws ssm get-parameter --name "$PARAM_VENDOR_HASH" --query "Parameter.Value" --output text 2>/dev/null || echo "")'
       - 'export NGINX_HASH_OLD=$(aws ssm get-parameter --name "$PARAM_NGINX_HASH" --query "Parameter.Value" --output text 2>/dev/null || echo "")'
-      -
+
       - 'echo "Computing current file hashes..."'
       - 'export BASE_HASH_NEW=$(sha256sum ./cicd/production/base.Dockerfile | awk "{print \$1}")'
       - 'export VENDOR_HASH_NEW=$(sha256sum composer.json | awk "{print \$1}")'
       - 'export NGINX_HASH_NEW=$(sha256sum ./cicd/production/nginx.conf | awk "{print \$1}")'
-      -
-      - 'echo "Base old:   $BASE_HASH_OLD"'
-      - 'echo "Base new:   $BASE_HASH_NEW"'
+
+      - 'echo "Base old: $BASE_HASH_OLD"'
+      - 'echo "Base new: $BASE_HASH_NEW"'
       - 'echo "Vendor old: $VENDOR_HASH_OLD"'
       - 'echo "Vendor new: $VENDOR_HASH_NEW"'
-      - 'echo "Nginx old:  $NGINX_HASH_OLD"'
-      - 'echo "Nginx new:  $NGINX_HASH_NEW"'
+      - 'echo "Nginx old: $NGINX_HASH_OLD"'
+      - 'echo "Nginx new: $NGINX_HASH_NEW"'
+
+      - 'echo "Determining if base image needs rebuild..."'
+      - 'if [ "$BASE_HASH_NEW" != "$BASE_HASH_OLD" ] || [ -z "$BASE_HASH_OLD" ]; then export BASE_NEEDS_REBUILD=1; else export BASE_NEEDS_REBUILD=0; fi'
+      - 'echo "BASE_NEEDS_REBUILD=$BASE_NEEDS_REBUILD"'
+
+      - 'echo "Determining if vendor image needs rebuild..."'
+      - 'if [ "$VENDOR_HASH_NEW" != "$VENDOR_HASH_OLD" ] || [ "$BASE_NEEDS_REBUILD" -eq 1 ] || [ -z "$VENDOR_HASH_OLD" ]; then export VENDOR_NEEDS_REBUILD=1; else export VENDOR_NEEDS_REBUILD=0; fi'
+      - 'echo "VENDOR_NEEDS_REBUILD=$VENDOR_NEEDS_REBUILD"'
+
+      - 'echo "Determining if nginx image needs rebuild..."'
+      - 'if [ "$NGINX_HASH_NEW" != "$NGINX_HASH_OLD" ] || [ "$BASE_NEEDS_REBUILD" -eq 1 ] || [ -z "$NGINX_HASH_OLD" ]; then export NGINX_NEEDS_REBUILD=1; else export NGINX_NEEDS_REBUILD=0; fi'
+      - 'echo "NGINX_NEEDS_REBUILD=$NGINX_NEEDS_REBUILD"'
 
   build:
     commands:
-      - 'echo "Checking base.Dockerfile for changes..."'
+      - 'echo "Building base image if needed..."'
       - |
-        if [ "$BASE_HASH_NEW" != "$BASE_HASH_OLD" ] || [ -z "$BASE_HASH_OLD" ]; then
-          echo "🔄 base.Dockerfile changed — rebuilding base image..."
-          docker build -f ./cicd/production/base.Dockerfile -t $ECR_REPO:base-$BUILD_TAG .
-          docker tag $ECR_REPO:base-$BUILD_TAG $ECR_REPO:latest-base
-          docker push $ECR_REPO:base-$BUILD_TAG
-          docker push $ECR_REPO:latest-base
-          aws ssm put-parameter --name "$PARAM_BASE_HASH" --value "$BASE_HASH_NEW" --type String --overwrite
-        else
-          echo "✅ No changes in base.Dockerfile, skipping base image build."
-        fi
-      -
-      - 'echo "Checking composer.json for changes..."'
+        'if [ "$BASE_NEEDS_REBUILD" -eq 1 ]; then
+            echo "🔄 base.Dockerfile changed — rebuilding base image..."
+            docker build -f ./cicd/production/base.Dockerfile -t $ECR_REPO:base-$BUILD_TAG .
+            docker tag $ECR_REPO:base-$BUILD_TAG $ECR_REPO:latest-base
+            docker push $ECR_REPO:base-$BUILD_TAG
+            docker push $ECR_REPO:latest-base
+            aws ssm put-parameter --name "$PARAM_BASE_HASH" --value "$BASE_HASH_NEW" --type String --overwrite
+         else
+            echo "✅ No changes in base.Dockerfile, skipping base image build."
+         fi'
+
+      - 'echo "Building vendor image if needed..."'
       - |
-        if [ "$VENDOR_HASH_NEW" != "$VENDOR_HASH_OLD" ] || [ -z "$VENDOR_HASH_OLD" ]; then
-          echo "🔄 composer.json changed — rebuilding vendor image..."
-          docker build -f ./cicd/production/vendor.Dockerfile -t $ECR_REPO:vendor-$BUILD_TAG .
-          docker tag $ECR_REPO:vendor-$BUILD_TAG $ECR_REPO:latest-vendor
-          docker push $ECR_REPO:vendor-$BUILD_TAG
-          docker push $ECR_REPO:latest-vendor
-          aws ssm put-parameter --name "$PARAM_VENDOR_HASH" --value "$VENDOR_HASH_NEW" --type String --overwrite
-        else
-          echo "✅ No changes in composer.json, skipping vendor image build."
-        fi
-      -
-      - 'echo "Checking nginx.conf for changes..."'
+        'if [ "$VENDOR_NEEDS_REBUILD" -eq 1 ]; then
+            echo "🔄 composer.json changed or base updated — rebuilding vendor image..."
+            docker build -f ./cicd/production/vendor.Dockerfile -t $ECR_REPO:vendor-$BUILD_TAG .
+            docker tag $ECR_REPO:vendor-$BUILD_TAG $ECR_REPO:latest-vendor
+            docker push $ECR_REPO:vendor-$BUILD_TAG
+            docker push $ECR_REPO:latest-vendor
+            aws ssm put-parameter --name "$PARAM_VENDOR_HASH" --value "$VENDOR_HASH_NEW" --type String --overwrite
+         else
+            echo "✅ No changes in composer.json, skipping vendor image build."
+         fi'
+
+      - 'echo "Building nginx image if needed..."'
       - |
-        if [ "$NGINX_HASH_NEW" != "$NGINX_HASH_OLD" ] || [ -z "$NGINX_HASH_OLD" ]; then
-          echo "🔄 nginx.conf changed — rebuilding nginx image..."
-          docker build -f ./cicd/production/nginx.Dockerfile -t $ECR_REPO:nginx-$BUILD_TAG .
-          docker tag $ECR_REPO:nginx-$BUILD_TAG $ECR_REPO:latest-nginx
-          docker push $ECR_REPO:nginx-$BUILD_TAG
-          docker push $ECR_REPO:latest-nginx
-          aws ssm put-parameter --name "$PARAM_NGINX_HASH" --value "$NGINX_HASH_NEW" --type String --overwrite
-        else
-          echo "✅ No changes in nginx.conf, skipping nginx image build."
-        fi
-      -
+        'if [ "$NGINX_NEEDS_REBUILD" -eq 1 ]; then
+            echo "🔄 nginx.conf changed or base updated — rebuilding nginx image..."
+            docker build -f ./cicd/production/nginx.Dockerfile -t $ECR_REPO:nginx-$BUILD_TAG .
+            docker tag $ECR_REPO:nginx-$BUILD_TAG $ECR_REPO:latest-nginx
+            docker push $ECR_REPO:nginx-$BUILD_TAG
+            docker push $ECR_REPO:latest-nginx
+            aws ssm put-parameter --name "$PARAM_NGINX_HASH" --value "$NGINX_HASH_NEW" --type String --overwrite
+         else
+            echo "✅ No changes in nginx.conf, skipping nginx image build."
+         fi'
+
       - 'echo "Preparing .env file..."'
       - 'cp .env.example .env'
       - 'echo "COMMIT_ID=$CODEBUILD_RESOLVED_SOURCE_VERSION" >> .env'
       - 'echo "BUILD_TIME=$(date +%Y-%m-%d-%H-%M-%s)" >> .env'
-      - 'cat .env'
-      - 'cp ./cicd/production/app.Dockerfile Dockerfile'
+      - 'echo "Building application image..."'
+      - 'docker build -f ./cicd/production/app.Dockerfile -t $ECR_REPO:app-$BUILD_TAG .'
+      - 'docker tag $ECR_REPO:app-$BUILD_TAG $ECR_REPO:latest'
+      - 'echo "Pushing application image..."'
+      - 'docker push $ECR_REPO:app-$BUILD_TAG'
+      - 'docker push $ECR_REPO:latest'
+      - 'echo "✅ App image pushed with tags: $BUILD_TAG and latest"'
+      -
+      - 'echo "Generating imagedefinitions.json for ECS deployment..."'
+      - 'echo "[ \
+          {\"name\":\"web\",\"imageUri\":\"$ECR_REPO:$BUILD_TAG\"}, \
+          {\"name\":\"horizon-default\",\"imageUri\":\"$ECR_REPO:$BUILD_TAG\"}, \
+          {\"name\":\"horizon-long-job\",\"imageUri\":\"$ECR_REPO:$BUILD_TAG\"}, \
+          {\"name\":\"horizon-single-task\",\"imageUri\":\"$ECR_REPO:$BUILD_TAG\"} \
+        ]" > imagedefinitions.json'
+
 
 artifacts:
   files:
-    - '**/*'
+    - 'imagedefinitions.json'
   discard-paths: no
