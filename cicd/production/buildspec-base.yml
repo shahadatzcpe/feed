@@ -86,7 +86,7 @@ phases:
             cp ./cicd/production/nginx.conf ./nginx.conf;
             docker build -f ./cicd/production/nginx.Dockerfile -t $ECR_REPO:nginx-$BUILD_TAG .;
             rm nginx.conf;
-            docker tag $ECR_REPO:nginx-$BUILD_TAG $ECR_REPO:latest-nginx;
+            docker tag $ECR_REPO:nginx-$BUILD_TAG $ECR_REPO:nginx-latest;
             docker push $ECR_REPO:nginx-$BUILD_TAG;
             docker push $ECR_REPO:nginx-latest;
             aws ssm put-parameter --name \"$PARAM_NGINX_HASH\" --value \"$NGINX_HASH_NEW\" --type String --overwrite;
