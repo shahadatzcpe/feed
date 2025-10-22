@@ -110,7 +110,7 @@ phases:
       - 'echo "Generating imagedefinitions-web.json for ECS deployment..."'
       - 'echo "[
           {\"name\":\"nginx\",\"imageUri\":\"$ECR_REPO:nginx-$NGINX_HASH_NEW\"},
-          {\"name\":\"php-fpm\",\"imageUri\":\"$ECR_REPO:app-$BUILD_TAG\"}
+          {\"name\":\"php-fpm-container\",\"imageUri\":\"$ECR_REPO:app-$BUILD_TAG\"}
         ]" > imagedefinitions-web.json'
 
       - 'echo "Generating imagedefinitions-horizon-heavy.json for ECS deployment..."'
