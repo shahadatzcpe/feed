@@ -121,7 +121,7 @@ phases:
       - 'echo "Generating imagedefinitions-horizon-default.json for ECS deployment..."'
       - 'echo "[
           {\"name\":\"horizon-default\",\"imageUri\":\"$ECR_REPO:app-$BUILD_TAG\"}
-        ]" > imagedefinitions-default.json'
+        ]" > imagedefinitions-horizon-default.json'
 
       - 'echo "Generating imagedefinitions-horizon-long.json for ECS deployment..."'
       - 'echo "[
