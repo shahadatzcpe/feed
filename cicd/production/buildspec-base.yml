@@ -87,7 +87,9 @@ phases:
             docker build -f ./cicd/production/nginx.Dockerfile -t $ECR_REPO:nginx-$BUILD_TAG .;
             rm nginx.conf;
             docker tag $ECR_REPO:nginx-$BUILD_TAG $ECR_REPO:nginx-latest;
+            docker tag $ECR_REPO:nginx-$BUILD_TAG $ECR_REPO:nginx-$NGINX_HASH_NEW;
             docker push $ECR_REPO:nginx-$BUILD_TAG;
+            docker push $ECR_REPO:nginx-$NGINX_HASH_NEW;
             docker push $ECR_REPO:nginx-latest;
             aws ssm put-parameter --name \"$PARAM_NGINX_HASH\" --value \"$NGINX_HASH_NEW\" --type String --overwrite;
          else
@@ -105,15 +107,30 @@ phases:
       - 'docker push $ECR_REPO:app-latest'
       - 'echo "✅ App image pushed with tags: $BUILD_TAG and app-latest"'
 
-      - 'echo "Generating imagedefinitions.json for ECS deployment..."'
+      - 'echo "Generating imagedefinitions-web.json for ECS deployment..."'
       - 'echo "[
-          {\"name\":\"web\",\"imageUri\":\"$ECR_REPO:app-latest\"},
-          {\"name\":\"horizon-default\",\"imageUri\":\"$ECR_REPO:app-latest\"},
-          {\"name\":\"horizon-long-job\",\"imageUri\":\"$ECR_REPO:app-latest\"},
-          {\"name\":\"horizon-single-task\",\"imageUri\":\"$ECR_REPO:app-latest\"}
-        ]" > imagedefinitions.json'
+          {\"name\":\"nginx\",\"imageUri\":\"$ECR_REPO:nginx-$NGINX_HASH_NEW\"},
+          {\"name\":\"php-fpm\",\"imageUri\":\"$ECR_REPO:app-$BUILD_TAG\"}
+        ]" > imagedefinitions-web.json'
 
+      - 'echo "Generating imagedefinitions-horizon-heavy.json for ECS deployment..."'
+      - 'echo "[
+          {\"name\":\"horizon-heavy\",\"imageUri\":\"$ECR_REPO:app-$BUILD_TAG\"}
+        ]" > imagedefinitions-horizon-heavy.json'
+
+      - 'echo "Generating imagedefinitions-horizon-default.json for ECS deployment..."'
+      - 'echo "[
+          {\"name\":\"horizon-default\",\"imageUri\":\"$ECR_REPO:app-$BUILD_TAG\"}
+        ]" > imagedefinitions-default.json'
+
+      - 'echo "Generating imagedefinitions-horizon-long.json for ECS deployment..."'
+      - 'echo "[
+          {\"name\":\"horizon-time-intensive\",\"imageUri\":\"$ECR_REPO:app-$BUILD_TAG\"}
+        ]" > imagedefinitions-horizon-long.json'
 artifacts:
   files:
-    - 'imagedefinitions.json'
+    - 'imagedefinitions-web.json'
+    - 'imagedefinitions-horizon-heavy.json'
+    - 'imagedefinitions-horizon-default.json'
+    - 'imagedefinitions-horizon-long.json'
   discard-paths: no
