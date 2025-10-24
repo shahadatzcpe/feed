@@ -187,8 +187,8 @@ return [
         'default-worker-256mb_1hr' => [
             'connection' => 'redis',
             'queue' => [
-                'default',
-                'default_priority'
+                '{default}',
+                '{default_priority}'
             ],
             'balance' => 'auto',
             'processes' => 0,
@@ -200,8 +200,8 @@ return [
         'heavy-worker-1gb_3hr' => [
             'connection' => 'redis',
             'queue' => [
-                'heavy_priority_1gb_3hr',
-                'heavy_1gb_3hr'
+                '{heavy_priority_1gb_3hr}',
+                '{heavy_1gb_3hr}'
             ],
             'balance' => 'auto',
             'processes' => 0,
@@ -213,8 +213,8 @@ return [
         'long-worker-1gb_3hr' => [
             'connection' => 'redis',
             'queue' => [
-                'long_priority_512mb_12hr',
-                'long_512mb_1hr'
+                '{long_priority_512mb_12hr}',
+                '{long_512mb_1hr}'
             ],
             'balance' => 'auto',
             'processes' => 0,
