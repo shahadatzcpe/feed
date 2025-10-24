@@ -24,7 +24,20 @@ class TestFrequentJob implements ShouldQueue
         ]);
 
         Log::info("Running TestFrequentJob on process " . getmypid());
-        sleep(rand(0, 100)); // Simulate some work
+        $rand = mt_rand(1, 100); // 1 to 100 for percentage
+
+        if ($rand <= 80) {
+            // 80% chance: 0-5
+            $x = mt_rand(0, 5);
+        } elseif ($rand <= 95) {
+            // Next 15% chance: 5-100
+            $x = mt_rand(5, 100);
+        } else {
+            // Remaining 5% chance: 100-500
+            $x = mt_rand(100, 500);
+        }
+
+        sleep($x); // Simulate some work
         Log::info("Finished TestFrequentJob on process " . getmypid());
     }
 }
