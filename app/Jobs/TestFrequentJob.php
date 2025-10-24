@@ -24,7 +24,7 @@ class TestFrequentJob implements ShouldQueue
         ]);
 
         Log::info("Running TestFrequentJob on process " . getmypid());
-        sleep(5); // Simulate some work
-
+        sleep(rand(5, 100)); // Simulate some work
+        Log::info("Finished TestFrequentJob on process " . getmypid());
     }
 }

@@ -10,7 +10,7 @@ Route::get('/', function () {
 
 Route::get('/test-frequent', function () {
     for ($i = 0; $i < (request()->n ?: 10); $i++) {
-        TestFrequentJob::dispatch(now() -> toString() . "--" . $i);//->onQueue(request()->queue ?: 'frequent_256mb_1hr');
+        TestFrequentJob::dispatch(now() -> toString() . "--" . $i)->onQueue(request()->queue ?: 'default');
     }
     return 'Dispatched 100 frequent jobs!';
 });

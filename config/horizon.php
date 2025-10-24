@@ -188,10 +188,10 @@ return [
             'connection' => 'redis',
             'queue' => [
                 'default',
-                'default_priority_256mb_1hr'
+                'default_priority'
             ],
             'balance' => 'auto',
-            'processes' => 8,
+            'processes' => 0,
             'tries' => 1,
             'memory' => 256,
             'timeout' => 3600, // 1 hour
@@ -204,7 +204,7 @@ return [
                 'heavy_1gb_3hr'
             ],
             'balance' => 'auto',
-            'processes' => 4,
+            'processes' => 0,
             'tries' => 1,
             'memory' => 1024,
             'timeout' => 10800, // 3 hours
@@ -217,7 +217,7 @@ return [
                 'long_512mb_1hr'
             ],
             'balance' => 'auto',
-            'processes' => 6,
+            'processes' => 0,
             'tries' => 1,
             'memory' => 100,
             'timeout' => 43200, // 12 hours
@@ -228,34 +228,16 @@ return [
         'production-default' => [
             'default-worker-256mb_1hr' => [
                 'processes' => 8
-            ],
-            'heavy-worker-1gb_3hr' => [
-                'processes' => 0
-            ],
-            'long-worker-1gb_3hr' => [
-                'processes' => 0
             ]
         ],
 
         'production-heavy' => [
-            'default-worker-256mb_1hr' => [
-                'processes' => 0
-            ],
             'heavy-worker-1gb_3hr' => [
                 'processes' => 6
             ],
-            'long-worker-1gb_3hr' => [
-                'processes' => 0
-            ]
         ],
 
         'production-long_run' => [
-            'default-worker-256mb_1hr' => [
-                'processes' => 0
-            ],
-            'heavy-worker-1gb_3hr' => [
-                'processes' => 0
-            ],
             'long-worker-1gb_3hr' => [
                 'processes' => 8
             ]
