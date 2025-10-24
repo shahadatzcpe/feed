@@ -89,11 +89,9 @@ phases:
             docker push $ECR_REPO:nginx-$BUILD_TAG;
             docker push $ECR_REPO:nginx-latest;
             aws ssm put-parameter --name \"$PARAM_NGINX_HASH\" --value \"$NGINX_HASH_NEW\" --type String --overwrite;
-            aws ssm put-parameter --name \"NGINX_LATEST_BUILD_TAG\" --value \"nginx-$BUILD_TAG\" --type String --overwrite;
          else
             echo \"✅ No changes in nginx.conf, skipping nginx image build.\";
          fi"'
-      - 'export NGINX_BUILD_TAG=$(sha256sum ./cicd/production/nginx.conf | awk "{print \$1}'
 
       - 'echo "Preparing .env file..."'
       - 'cp .env.example .env'
@@ -108,23 +106,23 @@ phases:
 
       - 'echo "Generating imagedefinitions-web.json for ECS deployment..."'
       - 'echo "[
-          {\"name\":\"nginx\",\"imageUri\":\"$ECR_REPO:nginx-$NGINX_BUILD_TAG\"},
+          {\"name\":\"nginx\",\"imageUri\":\"$ECR_REPO:nginx-latest\"},
           {\"name\":\"php-fpm-container\",\"imageUri\":\"$ECR_REPO:app-$BUILD_TAG\"}
         ]" > imagedefinitions-web.json'
-
-      - 'echo "Generating imagedefinitions-horizon-heavy.json for ECS deployment..."'
-      - 'echo "[
-          {\"name\":\"horizon-heavy\",\"imageUri\":\"$ECR_REPO:app-$BUILD_TAG\"}
-        ]" > imagedefinitions-horizon-heavy.json'
 
       - 'echo "Generating imagedefinitions-horizon-default.json for ECS deployment..."'
       - 'echo "[
           {\"name\":\"horizon-default\",\"imageUri\":\"$ECR_REPO:app-$BUILD_TAG\"}
         ]" > imagedefinitions-horizon-default.json'
 
+      - 'echo "Generating imagedefinitions-horizon-heavy.json for ECS deployment..."'
+      - 'echo "[
+          {\"name\":\"horizon-heavy\",\"imageUri\":\"$ECR_REPO:app-$BUILD_TAG\"}
+        ]" > imagedefinitions-horizon-heavy.json'
+
       - 'echo "Generating imagedefinitions-horizon-long.json for ECS deployment..."'
       - 'echo "[
-          {\"name\":\"horizon-time-intensive\",\"imageUri\":\"$ECR_REPO:app-$BUILD_TAG\"}
+          {\"name\":\"horizon-long\",\"imageUri\":\"$ECR_REPO:app-$BUILD_TAG\"}
         ]" > imagedefinitions-horizon-long.json'
 artifacts:
   files:
