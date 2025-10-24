@@ -190,7 +190,7 @@ return [
                 '{default}',
                 '{default_priority}'
             ],
-            'balance' => 'auto',
+            'balance' => 'none',
             'processes' => 0,
             'tries' => 1,
             'memory' => 256,
@@ -203,7 +203,7 @@ return [
                 '{heavy_priority_1gb_3hr}',
                 '{heavy_1gb_3hr}'
             ],
-            'balance' => 'auto',
+            'balance' => 'none',
             'processes' => 0,
             'tries' => 1,
             'memory' => 1024,
@@ -216,7 +216,7 @@ return [
                 '{long_priority_512mb_12hr}',
                 '{long_512mb_1hr}'
             ],
-            'balance' => 'auto',
+            'balance' => 'none',
             'processes' => 0,
             'tries' => 1,
             'memory' => 100,
