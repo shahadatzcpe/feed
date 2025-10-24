@@ -227,7 +227,7 @@ return [
     'environments' => [
         'production-default' => [
             'default-worker-256mb_1hr' => [
-                'processes' => 8
+                'processes' => 50
             ]
         ],
 
