@@ -233,13 +233,13 @@ return [
 
         'production-heavy' => [
             'heavy-worker-1gb_3hr' => [
-                'processes' => 6
+                'processes' => 20
             ],
         ],
 
         'production-long_run' => [
             'long-worker-1gb_3hr' => [
-                'processes' => 8
+                'processes' => 20
             ]
         ],
     ],
