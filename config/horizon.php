@@ -187,8 +187,8 @@ return [
         'default-worker-256mb_1hr' => [
             'connection' => 'redis',
             'queue' => [
+                '{default_priority}',
                 '{default}',
-                '{default_priority}'
             ],
             'balance' => 'none',
             'processes' => 0,
